@@ -6,8 +6,10 @@ from selenium.webdriver.support import expected_conditions as EC
 import json
 import time
 import traceback
+import csv
 # import wget
 
+REQUIRED_POSTS = 100
 driver = webdriver.Chrome()
 
 with open("config.json") as config_file:
@@ -16,9 +18,17 @@ with open("config.json") as config_file:
     password = config_data["password"]
 
 
+def url_cleaner(url):
+    if url == None:
+        return None
+    target_index = url.find("?")
+    return url[:target_index]
+
+
 def write_to_csv(json_data, file_name):
     with open(file_name, "a") as myFile:
         keys = list(json_data[0].keys())
+        # print(keys)
         # myFile.write(",".join(keys)+"\n")
         for row in json_data:
             row_csv = ''
@@ -33,6 +43,39 @@ def wait_for_element(selected_type, location, time, driver):
     element = WebDriverWait(driver, time).until(
         EC.presence_of_element_located((types[selected_type], location)))
     return element
+
+
+def get_post_history():
+    with open("test.csv", "r") as my_file:
+        my_data = list(csv.reader(my_file))
+        keys = my_data[0]
+        historical_data = {}
+
+        for i in range(1, len(my_data)):
+            row_data = my_data[i]
+            row_dict = {}
+            for j in range(len(keys)):
+                key = keys[j]
+                row_dict[key] = row_data[j]
+            historical_data[url_cleaner(row_dict["post_link"])] = row_dict
+        return historical_data
+
+
+def get_unique_id():
+    with open("unique_posts.csv", "r") as my_file:
+        my_data = list(csv.reader(my_file))
+        return len(my_data)
+
+
+def no_duplicate(curr_post, historical_data):
+    if url_cleaner(curr_post["post_link"]) not in historical_data:
+        return True
+    else:
+        old_post = historical_data[curr_post["post_link"]]
+        if old_post["likes"] == curr_post["likes"] and old_post["comments"] == curr_post["comments"]:
+            return False
+        else:
+            return True
 
 
 def extract_tags(image_tags):
@@ -96,16 +139,17 @@ time_since_posted
 post_data = {}
 post_csv_json = []
 post_count = 0
-REQUIRED_POSTS = 30
+
 post_id = 1
 unique_posts = []
+historical_data = get_post_history()
 # for i in range(1, initial_loaded_posts+1):
 i = 1
 while post_count < REQUIRED_POSTS:
     # print()
     curr_post = {"username": None, "likes": None, "comments": None, "tags": None,
                  "time_posted": None, "caption": None, "curr_time": None, "is_video": None, "post_link": None}
-    curr_unique_post = {"id": None, "username": None, "post_link": None}
+    curr_unique_post = {"post_id": None, "username": None, "post_link": None}
 
     # try:
     post_xpath = "/html/body/div[1]/section/main/section/div[1]/div[1]/div/article["+str(
@@ -143,7 +187,7 @@ while post_count < REQUIRED_POSTS:
 
         image_tags = extract_tags(image_tags)
 
-    if video_src in post_data or image_src in post_data:
+    if url_cleaner(video_src) in post_data or url_cleaner(image_src) in post_data:
 
         loaded_posts = wait_for_element(
             "xpath", "/html/body/div[1]/section/main/section/div[1]/div[1]/div", 5, driver).find_elements_by_tag_name("article")
@@ -184,7 +228,7 @@ while post_count < REQUIRED_POSTS:
 
             change = 0
             checker_src = ''
-            while (checker_src != image_src and checker_src != video_src):
+            while (url_cleaner(checker_src) != url_cleaner(image_src) and url_cleaner(checker_src) != url_cleaner(video_src)):
                 checker_xpath = "/html/body/div[1]/section/main/section/div[1]/div[1]/div/article["+str(
                     i-change)+"]/div[1]/div"
                 checker_node = wait_for_element(
@@ -228,7 +272,7 @@ while post_count < REQUIRED_POSTS:
     curr_post["username"] = post_user_name
     curr_post["likes"] = likes
     curr_post["comments"] = comments
-    curr_post["tags"] = image_tags
+    curr_post["tags"] = str(image_tags)
     curr_post["time_posted"] = posted_time
     curr_post["caption"] = post_caption
     curr_post["curr_time"] = driver.execute_script(
@@ -243,18 +287,24 @@ while post_count < REQUIRED_POSTS:
         curr_unique_post["post_link"] = image_src
         # wget.download(video_src, "./files/"+str(post_id)+".jpg")
 
-    curr_unique_post["id"] = post_id
-    post_id += 1
+    # curr_unique_post["id"] = post_id
+    # post_id += 1
     curr_unique_post["username"] = post_user_name
 
     # #print("Loaded", num_loaded)
 
     # if curr_post["post_link"] not in post_data:
-    post_data[curr_post["post_link"]] = True
-    post_csv_json.append(curr_post)
-    unique_posts.append(curr_unique_post)
+    post_data[url_cleaner(curr_post["post_link"])] = True
+    # post_csv_json.append(curr_post)
+    # unique_posts.append(curr_unique_post)
+    if no_duplicate(curr_post, historical_data):
+        write_to_csv([curr_post], "test.csv")
+
+    if url_cleaner(curr_post["post_link"]) not in historical_data:
+        curr_unique_post["post_id"] = get_unique_id()
+        write_to_csv([curr_unique_post], "unique_posts.csv")
     post_count += 1
-    print(post_count)
+    # print(post_count)
     # print(curr_post)
     driver.execute_script("window.scrollBy(0, 900);")
     time.sleep(2)
