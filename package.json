@@ -19,7 +19,6 @@
   "homepage": "https://github.com/naseer2426/Data-Analysis-Project#readme",
   "dependencies": {
     "cron": "^1.8.2",
-    "discord.js": "^12.2.0",
-    "jQuery": "^1.7.4"
+    "discord.js": "^12.2.0"
   }
 }
