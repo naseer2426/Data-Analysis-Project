@@ -53,7 +53,7 @@ var scrape = () => {
 var job = new CronJob("0 0,6,12,18,24,30,36,42,48,54 * * * *", function () {
     scrape();
 });
-// job.start();
+job.start();
 // client.emit("message", { content: "ping" });
 
 client.login(token);

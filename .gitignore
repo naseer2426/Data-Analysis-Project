@@ -1,3 +1,9 @@
 config.json
 .DS_Store
 node_modules
+test.csv
+naseer_followers.json
+unique_posts.csv
+user_data.csv
+post_data.csv
+caption_sentiment_analysis.csv

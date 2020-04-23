@@ -14,6 +14,7 @@ REQUIRED_POSTS = 25
 chrome_options = Options()
 chrome_options.headless = True
 chrome_options.add_argument("--window-size=1920x1080")
+driver = webdriver.Chrome(options=chrome_options)
 driver = webdriver.Chrome()
 
 with open("config.json") as config_file:
@@ -33,7 +34,7 @@ def url_cleaner(url):
         if url[i] == "/":
             break
     start_index = i
-    return url[start_index:target_index]
+    return url[start_index+1:target_index]
 
 
 def write_to_csv(json_data, file_name):
@@ -50,7 +51,7 @@ def write_to_csv(json_data, file_name):
 
 def wait_for_element(selected_type, location, time, driver):
     types = {"name": By.NAME, "id": By.ID,
-             "xpath": By.XPATH, "tag": By.TAG_NAME}
+             "xpath": By.XPATH, "tag": By.TAG_NAME, "class": By.CLASS_NAME, "name": By.NAME}
     element = WebDriverWait(driver, time).until(
         EC.presence_of_element_located((types[selected_type], location)))
     return element
@@ -120,7 +121,12 @@ try:
         "xpath", "/html/body/div[4]/div/div/div[3]/button[2]", 5, driver)
 
     no_notif.click()
-
+    time.sleep(7)
+    # no_notif = wait_for_element("class", "aOOlW   HoLwm ", 10, driver)
+    # no_notif.click()
+    # no_notif = driver.execute_script(
+    #     "return document.getElementsByClassName('aOOlW   HoLwm ')[0]")
+    # no_notif.click()
     driver.execute_script("location.reload()")
     time.sleep(5)
 
@@ -131,8 +137,13 @@ try:
 
     wait_for_load_buffer = wait_for_element(
         "xpath", "/html/body/div[1]/section/main/section/div[1]/div[1]/div/article[1]", 5, driver)
+    # wait_for_load_buffer = wait_for_element(
+    #     "class", "cGcGK", 5, driver)
     loaded_posts = wait_for_element(
         "xpath", "/html/body/div[1]/section/main/section/div[1]/div[1]/div", 5, driver).find_elements_by_tag_name("article")
+
+    # loaded_posts = wait_for_element(
+    #     "class", "cGcGK", 5, driver).find_elements_by_tag_name("article")
 
     initial_loaded_posts = len(loaded_posts)
     # #print(initial_loaded_posts)
