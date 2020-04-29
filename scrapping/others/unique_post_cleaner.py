@@ -57,4 +57,3 @@ for post in unique_posts:
         post_freq[curr_post_clean_url] = 1
 
 print(duplicates)
-print(post_freq["93365314_2626683044246675_2288766720677227392_n.jpg"])

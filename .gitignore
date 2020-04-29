@@ -7,3 +7,5 @@ unique_posts.csv
 user_data.csv
 post_data.csv
 caption_sentiment_analysis.csv
+.ipynb_checkpoints
+settings.cfg
